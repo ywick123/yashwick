@@ -45,8 +45,7 @@ public class Main {
             System.out.println("3. User Profile");
             System.out.println("4. View Order Status");
             System.out.println("5. Seasonal Offer");
-            System.out.println("6. Favorites");
-            System.out.println("7. Exit");
+            System.out.println("6. Exit");
 
             int choice = scanner.nextInt();
 
@@ -327,7 +326,88 @@ public class Main {
     }
 
     private void manageUserProfile() {
-        System.out.println("Managing user profile...");
+        System.out.println("Enter your contact number to access your profile:");
+        String phoneNumber = scanner.nextLine();
+        Customer customer = getOrCreateCustomer(phoneNumber);
+
+        if (customer == null) {
+            System.out.println("Customer not found. Please place an order to create your profile.");
+            return;
+        }
+
+        System.out.println("Welcome, " + customer.getName() + "!");
+        System.out.println("1. View Profile");
+        System.out.println("2. View Favorite Pizzas");
+        System.out.println("3. Add Favorite Pizza");
+        System.out.println("4. Reorder Favorite Pizza");
+        System.out.println("5. Back to Main Menu");
+
+        int choice = getIntInput(1, 5, "Invalid choice. Please try again.");
+
+        switch (choice) {
+            case 1:
+                System.out.println(customer);
+                break;
+            case 2:
+                customer.displayFavorites();
+                break;
+            case 3:
+                addFavoritePizza(customer);
+                break;
+            case 4:
+                reorderFavoritePizza(customer);
+                break;
+            case 5:
+                return; // Return to the main menu
+            default:
+                System.out.println("Invalid choice.");
+        }
+    }
+
+    private void addFavoritePizza(Customer customer) {
+        System.out.println("Customize a pizza to add as a favorite:");
+        Pizza pizza = customizePizza(); // Calls the existing customizePizza() method
+        customer.addFavoritePizza(pizza); // Adds the customized pizza to the user's favorites
+        System.out.println("Pizza added to your favorites!");
+    }
+    private void reorderFavoritePizza(Customer customer) {
+        List<Pizza> favorites = customer.getFavoritePizzas();
+        if (favorites.isEmpty()) {
+            System.out.println("No favorite pizzas available to reorder.");
+            return;
+        }
+
+        System.out.println("Select a favorite pizza to reorder:");
+        for (int i = 0; i < favorites.size(); i++) {
+            System.out.println((i + 1) + ". " + favorites.get(i));
+        }
+
+        int choice = getIntInput(1, favorites.size(), "Invalid choice. Please try again.");
+        Pizza selectedPizza = favorites.get(choice - 1);
+
+        System.out.println("Enter quantity:");
+        int quantity = getIntInput(1, Integer.MAX_VALUE, "Invalid quantity. Defaulting to 1.");
+
+        System.out.println("Select delivery method:");
+        String deliveryMethod = selectDeliveryMethod();
+
+        String address = null;
+        if ("Delivery".equals(deliveryMethod)) {
+            address = getDeliveryAddress();
+        }
+
+        double orderAmount = selectedPizza.getPrice() * quantity;
+
+        // Select payment method
+        PaymentStrategy paymentStrategy = getPaymentStrategy();
+        customer.setPaymentStrategy(paymentStrategy);
+        customer.makePayment(orderAmount);
+
+        // Create and add the order
+        Order order = createOrder(selectedPizza, deliveryMethod, quantity, address, orderAmount);
+        orders.add(order);
+
+        System.out.println("Favorite pizza reordered! Order ID: " + order.getId());
     }
 
     private void viewOrderStatus() {
